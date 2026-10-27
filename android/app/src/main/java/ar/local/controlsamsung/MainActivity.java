@@ -32,6 +32,7 @@ public class MainActivity extends Activity implements TvConnection.Listener {
     private TvConnection tv;
     private WebView web;
     private boolean destroyed, loaded, pending;
+    private boolean launching, catalogProbeRunning;
     private String message = "Conectá tu televisor";
     private int appRequest;
     private AlertDialog connectionDialog;
@@ -114,7 +115,7 @@ public class MainActivity extends Activity implements TvConnection.Listener {
     @Override public void state(boolean ready, boolean pending, String message) {
         this.pending = pending; this.message = message; publish();
         if (message.startsWith("El TV rechazó") || message.startsWith("No se pudo enviar")) toast(message);
-        if (ready) { if (connectionDialog != null) connectionDialog.dismiss(); waitForApps(); }
+        if (ready && connectionDialog != null) connectionDialog.dismiss();
     }
     @Override public void apps(List<Protocol.TVApp> list) { installed.clear(); installed.addAll(list); installed.sort((a,b) -> a.name.compareToIgnoreCase(b.name)); publishApps(); }
     private List<Protocol.TVApp> allApps() {
@@ -163,7 +164,6 @@ public class MainActivity extends Activity implements TvConnection.Listener {
                 finally { runOnUiThread(()->{search.setEnabled(true);search.setText("Buscar mi televisor");}); }
             });
         });
-        Switch rest = new Switch(this); rest.setText("Método alternativo para abrir apps"); rest.setMinimumHeight(56); rest.setChecked(prefs.getBoolean("rest",false)); rest.setOnCheckedChangeListener((b,value)->prefs.edit().putBoolean("rest",value).apply()); panel.addView(rest);
         Button help = new Button(this); help.setText("Ayuda y vinculación"); help.setAllCaps(false); help.setOnClickListener(v->help()); panel.addView(help);
         connectionDialog = new AlertDialog.Builder(this).setTitle("Conectar Samsung TU7000").setView(panel).setNegativeButton("Cerrar",null).setPositiveButton(pending?"Vinculando…":"Conectar",null).create();
         connectionDialog.setOnShowListener(d -> connectionDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
@@ -194,10 +194,12 @@ public class MainActivity extends Activity implements TvConnection.Listener {
     }
     private void openShortcut(String name) {
         String[] candidates = ids(name); if(candidates.length==0) return;
-        Protocol.TVApp selected = new Protocol.TVApp(candidates[0],name,2);
-        for(Protocol.TVApp a:installed) { String lower=a.name.toLowerCase(Locale.ROOT); if(lower.contains(name.toLowerCase(Locale.ROOT)) || name.equals("HBO Max")&&(lower.contains("hbo")||lower.equals("max"))) {selected=a;break;} }
+        List<Protocol.TVApp> options = new ArrayList<>();
         String override = prefs.getString("shortcut:"+prefs.getString("host","")+":"+name,"");
-        if(!override.isEmpty()) selected=new Protocol.TVApp(override,name,2); launch(selected);
+        if(!override.isEmpty()) options.add(new Protocol.TVApp(override,name,2));
+        for(Protocol.TVApp a:installed) { String lower=a.name.toLowerCase(Locale.ROOT); if(lower.contains(name.toLowerCase(Locale.ROOT)) || name.equals("HBO Max")&&(lower.contains("hbo")||lower.equals("max"))) options.add(a); }
+        for(String id:candidates) options.add(new Protocol.TVApp(id,name,2));
+        launchCandidates(name,options);
     }
     private void variants(String name) {
         String[] values=ids(name); if(values.length==0)return;
@@ -208,18 +210,61 @@ public class MainActivity extends Activity implements TvConnection.Listener {
         }).show();
     }
     private void launch(Protocol.TVApp app) {
+        launchCandidates(app.name,Collections.singletonList(app));
+    }
+    private void launchFeedback(String name,boolean busy,String feedback){
+        try{call("appLaunchState",new JSONObject().put("name",name).put("busy",busy).put("message",feedback));}catch(Exception ignored){}
+    }
+    private void launchCandidates(String name,List<Protocol.TVApp> candidates){
         if(!tv.isReady()){showSettings();return;}
-        if(!prefs.getBoolean("rest",false)) { try{tv.launch(app);toast("Solicitud enviada para abrir "+app.name+".");}catch(Exception e){toast(e.getMessage());}return; }
-        String host=prefs.getString("host",""); if(!Protocol.privateIp(host)||!app.id.matches("[A-Za-z0-9._-]{1,150}"))return;
+        if(launching){toast("Ya estoy abriendo una app. Esperá unos segundos.");return;}
+        final String host=prefs.getString("host","");
+        if(!Protocol.privateIp(host))return;
+        launching=true;launchFeedback(name,true,"Abriendo "+name+"…");
         network.execute(()->{
-            HttpURLConnection c=null;String feedback;
-            try{c=(HttpURLConnection)new URL("http://"+host+":8001/api/v2/applications/"+app.id).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(4000);c.setReadTimeout(4000);c.setRequestMethod("POST");int code=c.getResponseCode();feedback=code>=200&&code<300?"El TV aceptó el pedido para abrir "+app.name:"El TV no pudo abrir la app. Probá otra variante o abrila desde Inicio.";}
-            catch(Exception e){feedback="No se pudo abrir la app. Probá desde Inicio del TV.";}finally{if(c!=null)c.disconnect();}
-            final String result=feedback;runOnUiThread(()->toast(result));
+            AppLauncher.Result outcome;
+            try{outcome=AppLauncher.launch(candidates,new HttpAppTransport(host,()->!destroyed&&tv.isReady()&&host.equals(prefs.getString("host",""))),Thread::sleep);}
+            catch(InterruptedException e){Thread.currentThread().interrupt();outcome=new AppLauncher.Result(AppLauncher.Status.UNAVAILABLE,null);}
+            catch(RuntimeException e){outcome=new AppLauncher.Result(AppLauncher.Status.UNAVAILABLE,null);}
+            final AppLauncher.Result result=outcome;
+            runOnUiThread(()->{
+                launching=false;if(destroyed)return;
+                if(!tv.isReady()||!host.equals(prefs.getString("host",""))){launchFeedback(name,false,"");return;}
+                String feedback;
+                switch(result.status){
+                    case VISIBLE:
+                        feedback=name+" está abierta en el TV.";
+                        if(result.app!=null)prefs.edit().putString("shortcut:"+host+":"+name,result.app.id).apply();
+                        break;
+                    case ACCEPTED:feedback="El TV aceptó abrir "+name+", pero todavía no confirma que esté visible.";break;
+                    case NOT_FOUND:feedback="No encontré un identificador instalado para "+name+". Revisá las apps del TV o abrila desde Inicio.";break;
+                    case REJECTED:feedback="El TV rechazó abrir "+name+". Probá abrirla desde Inicio y volvé a intentar.";break;
+                    default:
+                        try{if(result.app==null)throw new Exception();tv.launch(result.app);feedback="Se envió un pedido alternativo para "+name+", sin confirmación del TV.";}
+                        catch(Exception e){feedback="No se pudo abrir "+name+". Revisá la conexión con el televisor.";}
+                }
+                launchFeedback(name,false,feedback);
+            });
         });
     }
-    private void requestApps(){if(!tv.isReady()){showSettings();return;}try{tv.requestApps();waitForApps();}catch(Exception e){toast(e.getMessage());}}
-    private void waitForApps(){int n=++appRequest;handler.postDelayed(()->{if(!destroyed&&n==appRequest&&installed.isEmpty()&&tv.isReady())try{call("appsNotice",new JSONObject().put("message","El TV no devolvió la lista. Usá los accesos rápidos o Inicio."));}catch(Exception ignored){}},8000);}
+    private void requestApps(){if(!tv.isReady()){showSettings();return;}try{tv.requestApps();int n=++appRequest;call("appsNotice",new JSONObject().put("message","Consultando las apps instaladas…"));handler.postDelayed(()->loadCatalog(n),800);}catch(Exception e){toast(e.getMessage());}}
+    private void loadCatalog(int n){
+        if(destroyed||n!=appRequest||!tv.isReady()||!installed.isEmpty())return;
+        if(launching){handler.postDelayed(()->loadCatalog(n),2000);return;}
+        if(catalogProbeRunning)return;catalogProbeRunning=true;
+        final String host=prefs.getString("host","");
+        List<List<Protocol.TVApp>> catalog=new ArrayList<>();
+        for(String name:new String[]{"Netflix","HBO Max","YouTube","Prime Video","Disney+","Spotify"}){
+            List<Protocol.TVApp> alternatives=new ArrayList<>();for(String id:ids(name))alternatives.add(new Protocol.TVApp(id,name,2));catalog.add(alternatives);
+        }
+        network.execute(()->{
+            List<Protocol.TVApp> found=AppLauncher.discover(catalog,new HttpAppTransport(host,()->!destroyed&&tv.isReady()&&host.equals(prefs.getString("host",""))));
+            runOnUiThread(()->{catalogProbeRunning=false;if(destroyed||n!=appRequest||!tv.isReady()||!host.equals(prefs.getString("host","")))return;
+                if(installed.isEmpty())apps(found);
+                if(installed.isEmpty())try{call("appsNotice",new JSONObject().put("message","El TV no devolvió una lista. Los accesos rápidos consultan sus identificadores al abrir."));}catch(Exception ignored){}
+            });
+        });
+    }
     private void customApp(){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(32,8,32,8);EditText name=new EditText(this);name.setHint("Nombre de la app");box.addView(name);EditText id=new EditText(this);id.setHint("Identificador de la app en el TV");id.setSingleLine();box.addView(id);
         new AlertDialog.Builder(this).setTitle("Agregar acceso").setView(box).setNegativeButton("Cancelar",null).setPositiveButton("Guardar",(d,w)->{try{String value=id.getText().toString().trim(),label=name.getText().toString().trim();Protocol.launch(value,2);if(label.isEmpty())throw new Exception("Ingresá un nombre.");JSONArray a=new JSONArray(prefs.getString("customApps","[]"));a.put(new JSONObject().put("id",value).put("name",label));prefs.edit().putString("customApps",a.toString()).apply();publishApps();}catch(Exception e){toast(e.getMessage());}}).show();}
     private void help(){new AlertDialog.Builder(this).setTitle("Vincular tu Samsung TU7000").setMessage("En el TV: Configuración → General → Red → Estado de red → Configuración IP.\n\nConectá ambos equipos a la misma red, ingresá la IP y aceptá ‘Control Samsung Android’ en el televisor.\n\nSi una app no abre, mantené presionado su logo para probar otra variante.\n\nSi cambió el certificado o el permiso, olvidá el vínculo y conectá otra vez.").setPositiveButton("Entendido",null).setNeutralButton("Olvidar vínculo",(d,w)->{tv.disconnect();String host=prefs.getString("host","");prefs.edit().remove("token:"+host+":8002").remove("token:"+host+":8001").remove("cert:"+host).apply();state(false,false,"Vínculo olvidado. Volvé a conectar.");}).show();}

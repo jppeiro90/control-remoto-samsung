@@ -4,7 +4,7 @@ Control por Wi-Fi para Samsung Smart TV, desarrollado y probado con un **Samsung
 
 ## Descargar la app
 
-**[Descargar Control Samsung 2.1 para Android](https://juanpablopeiro.com.ar/controlsamsung/Control-Samsung-Android.apk?v=2.1)**
+**[Descargar Control Samsung 2.2 para Android](https://juanpablopeiro.com.ar/controlsamsung/Control-Samsung-Android.apk?v=2.2)**
 
 También disponible en **[GitHub Releases](https://github.com/jppeiro90/control-remoto-samsung/releases/latest)**.
 
@@ -18,6 +18,7 @@ Requiere Android 8 o posterior. El APK está firmado para instalación directa; 
 - Apagado, volumen, silencio, canales, guía y teclado numérico.
 - Reproducción, pausa, avance y retroceso.
 - Accesos con logos a Netflix, HBO Max, Disney+, YouTube, Prime Video y Spotify.
+- Apertura automática por HTTP local, resolución de identificadores instalados y comprobación de visibilidad.
 - Consulta de aplicaciones instaladas en el TV y accesos personalizados.
 - Búsqueda del televisor en la red y vinculación guardada en cada celular.
 - Encendido opcional por Wake-on-LAN, sujeto al soporte y configuración del TV.
@@ -60,7 +61,7 @@ python android/prepare_build.py
 
 Este último método descarga herramientas oficiales a `%LOCALAPPDATA%/ControlSamsungBuild` y genera el APK en la raíz del proyecto. En la primera preparación acepta las licencias estándar del SDK Android. No modifica el PATH ni inicia servidores. Cada entorno de compilación utiliza su propia clave de prueba; para actualizar una instalación existente, la firma debe coincidir con la del APK instalado.
 
-El proyecto incluye **14 pruebas unitarias** del protocolo y entrega de teclas. Ver [documentación Android](android/README.md).
+El proyecto incluye **24 pruebas unitarias** del protocolo y entrega de teclas. Ver [documentación Android](android/README.md).
 
 ## Privacidad
 

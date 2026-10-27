@@ -14,10 +14,10 @@ Si la app pasa a segundo plano, cierra la conexión. Al regresar intenta reconec
 
 ## Netflix, HBO Max y otras apps
 
-- Accesos rápidos a Netflix, HBO Max, YouTube, Prime Video y Disney+.
+- Accesos rápidos a Netflix, HBO Max, YouTube, Prime Video, Disney+ y Spotify.
 - **Apps del TV** consulta la lista instalada y usa los identificadores que el propio TV devuelve. Si encuentra Netflix/HBO Max, usa esa información para los accesos rápidos.
-- Cuando el firmware no devuelve la lista, los accesos usan identificadores conocidos que pueden variar por región o actualización. Se puede usar Inicio y navegar normalmente, probar **Método alternativo para abrir apps** (HTTP REST local), o agregar un acceso por identificador.
-- Los pedidos de apertura no confirman por sí mismos que la app haya abierto: verificá la pantalla del TV. Las apps deben estar instaladas y tener la sesión iniciada en el televisor. El control no incluye suscripciones ni reproduce catálogos en el teléfono.
+- Los accesos consultan por HTTP local los identificadores disponibles, ignoran los que el TV responde como inexistentes y abren la app instalada. No hace falta activar un método alternativo. Si el firmware no devuelve la lista completa, la pestaña Apps consulta los identificadores conocidos para mostrar los que el TV informa instalados.
+- La app distingue entre apertura confirmada por `visible: true`, pedido aceptado sin confirmación de visibilidad y error. Si HTTP no está disponible, intenta el canal WebSocket y lo informa como un pedido sin confirmar. Las apps deben estar instaladas y tener la sesión iniciada en el televisor. El control no incluye suscripciones ni reproduce catálogos en el teléfono.
 
 ## Encendido y permisos
 
@@ -42,3 +42,9 @@ Control con cruceta circular, botones de volumen/canales verticales, símbolos S
 ## Versión 2.1
 
 Apagado usa KEY_POWER (una sola pulsación, sin reintento automático). Los toques repetidos de encendido se filtran durante 2,5 segundos para evitar alternancias accidentales. Fuente usa una pulsación Press/Release de 180 ms; mantener presionado su botón abre alternativas de clic simple y acceso a Inicio para elegir la entrada. Los comandos de teclas se envían en orden y cada pulsación mantenida termina con Release. Los errores del TV se muestran en pantalla. El efecto de cada tecla todavía depende del firmware y requieren verificación en el TV real.
+
+## Versión 2.2
+
+Corrige los accesos que solo enviaban `ed.apps.launch` sin comprobar el resultado. Ahora consulta `GET /api/v2/applications/{id}`, abre con `POST` y vuelve a consultar el estado. La resolución prueba variantes regionales (en el TU7000 probado, Disney+ usa `3201901017640`). La lista de Apps tiene una alternativa HTTP cuando el TV ignora la consulta WebSocket. El estado `running` no se trata como prueba de que la app esté en primer plano; tampoco se omite el POST basándose en un indicador `visible` previo que pueda estar desactualizado.
+
+Validación: 24 pruebas unitarias, compilación/lint y prueba directa contra un Samsung UN50TU7000. YouTube abrió mediante HTTP y su apertura fue confirmada visualmente por el usuario; también confirmó que las otras pruebas estaban abriendo apps. La visibilidad informada por el TV puede tardar en actualizarse.

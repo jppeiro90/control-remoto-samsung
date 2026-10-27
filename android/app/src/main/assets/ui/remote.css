@@ -7,3 +7,5 @@
 
 /* Superficies táctiles de al menos 48 px en los controles principales. */
 .rocker button{min-height:48px}.playback button{min-height:48px}.connection{min-height:48px}
+
+.shortcut:disabled,.installed-app:disabled{opacity:.55;cursor:progress}

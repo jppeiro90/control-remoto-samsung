@@ -62,7 +62,7 @@ public final class Protocol {
         List<TVApp> result = new ArrayList<>();
         if (list != null) for (int i = 0; i < list.length(); i++) {
             JSONObject a = list.getJSONObject(i);
-            String id = a.optString("appId"), name = a.optString("name", id);
+            String id = a.optString("appId",a.optString("app_id",a.optString("id"))), name = a.optString("name", id);
             if (id.matches("[A-Za-z0-9._-]{1,150}")) result.add(new TVApp(id, name, a.optInt("app_type", 2)));
         }
         return result;
