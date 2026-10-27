@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#101113"><title>Control Samsung</title><link rel="stylesheet" href="remote.css"><script src="remote.js" defer></script>
+</head>
+<body>
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="power" viewBox="0 0 24 24"><path d="M12 3v8m-5-6a8 8 0 1 0 10 0"/></symbol>
+<symbol id="up" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></symbol>
+<symbol id="down" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+<symbol id="left" viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></symbol>
+<symbol id="right" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></symbol>
+<symbol id="home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-7h6v7"/></symbol>
+<symbol id="back" viewBox="0 0 24 24"><path d="m9 5-6 6 6 6m-6-6h11a6 6 0 0 1 0 12" transform="translate(0 -2)"/></symbol>
+<symbol id="menu" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14"/></symbol>
+<symbol id="source" viewBox="0 0 24 24"><path d="M5 8V4h15v16H5v-4M2 12h11m-4-4 4 4-4 4"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="mute" viewBox="0 0 24 24"><path d="m11 4-5 4H2v8h4l5 4zM16 9l6 6m0-6-6 6"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+<symbol id="rewind" viewBox="0 0 24 24"><path d="m11 6-8 6 8 6zm10 0-8 6 8 6z"/></symbol>
+<symbol id="forward" viewBox="0 0 24 24"><path d="m3 6 8 6-8 6zm10 0 8 6-8 6z"/></symbol>
+<symbol id="settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></symbol>
+<symbol id="apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+<symbol id="remote" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="4"/><circle cx="12" cy="10" r="3"/><path d="M10 17h4M12 5h.01"/></symbol>
+<symbol id="keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M8 16h8"/></symbol>
+<symbol id="refresh" viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 0 8M20 3v6h-6"/></symbol>
+</defs></svg>
+<div class="app">
+<header><div class="identity"><span class="brand">SAMSUNG</span><span class="model">TU7000 <span>·</span> Smart Remote</span></div><button class="settings icon-button" data-action="settings" aria-label="Conexión y ajustes"><svg><use href="#settings"/></svg></button></header>
+<main>
+<section id="control" class="page active" aria-label="Control remoto">
+<button class="connection" data-action="settings" aria-label="Estado de conexión. Tocar para conectar"><i id="led"></i><span id="connection-label">Conectar televisor</span><svg><use href="#right"/></svg></button>
+<div class="shell">
+<div class="top"><button class="round power" data-key="POWER" aria-label="Apagar televisor"><svg><use href="#power"/></svg></button><span class="shell-mark">SMART CONTROL</span><button class="round" data-key="SOURCE" aria-label="Cambiar fuente"><svg><use href="#source"/></svg></button></div>
+<div class="dpad" aria-label="Navegación"><button class="direction up" data-key="UP" aria-label="Arriba"><svg><use href="#up"/></svg></button><button class="direction left" data-key="LEFT" aria-label="Izquierda"><svg><use href="#left"/></svg></button><button class="ok" data-key="ENTER" aria-label="Aceptar">OK</button><button class="direction right" data-key="RIGHT" aria-label="Derecha"><svg><use href="#right"/></svg></button><button class="direction down" data-key="DOWN" aria-label="Abajo"><svg><use href="#down"/></svg></button></div>
+<div class="navigation"><button class="round" data-key="RETURN" aria-label="Volver"><svg><use href="#back"/></svg></button><button class="round home" data-key="HOME" aria-label="Inicio del televisor"><svg><use href="#home"/></svg></button><button class="round" data-key="MENU" aria-label="Menú del televisor"><svg><use href="#menu"/></svg></button></div>
+<div class="rockers"><div class="rocker"><button data-key="VOLUP" aria-label="Subir volumen"><svg><use href="#plus"/></svg></button><span>VOL</span><button data-key="VOLDOWN" aria-label="Bajar volumen"><svg><use href="#minus"/></svg></button></div><button class="round mute" data-key="MUTE" aria-label="Silenciar"><svg><use href="#mute"/></svg></button><div class="rocker"><button data-key="CHUP" aria-label="Canal siguiente"><svg><use href="#up"/></svg></button><span>CH</span><button data-key="CHDOWN" aria-label="Canal anterior"><svg><use href="#down"/></svg></button></div></div>
+<div class="playback"><button data-key="REWIND" aria-label="Retroceder"><svg><use href="#rewind"/></svg></button><button data-key="PLAY" aria-label="Reproducir"><svg><use href="#play"/></svg></button><button data-key="PAUSE" aria-label="Pausar"><svg><use href="#pause"/></svg></button><button data-key="FF" aria-label="Adelantar"><svg><use href="#forward"/></svg></button></div>
+<div class="grip"><i></i><i></i><i></i></div>
+</div>
+<div id="shortcuts" class="shortcuts app-dock" aria-label="Abrir aplicaciones del TV"></div>
+</section>
+<section id="applications" class="page" aria-label="Aplicaciones del televisor"><div class="page-heading"><div><span class="eyebrow">EN TU TELEVISOR</span><h1>Tus apps</h1></div><button class="icon-button" data-action="apps" aria-label="Actualizar apps del TV"><svg><use href="#refresh"/></svg></button></div><div id="app-favorites" class="app-grid"></div><div class="section-title"><h2>Instaladas en el TV</h2><span id="app-count">0</span></div><p id="apps-message">Conectá el televisor para consultar sus apps.</p><div id="installed" class="installed-list"></div><button class="text-button" data-action="addApp">+ Agregar otro acceso</button><p class="hint">Si un acceso no abre, mantené presionado su logo para probar otra variante.</p></section>
+<section id="numbers" class="page" aria-label="Teclado numérico"><div class="page-heading"><div><span class="eyebrow">TV EN VIVO</span><h1>Elegí tu canal</h1></div></div><div id="number-pad" class="number-pad"></div><div class="extra-controls"><button data-key="GUIDE">Guía</button><button data-key="INFO">Info</button><button data-key="EXIT">Salir</button></div><button class="text-button" data-action="wake"><svg><use href="#power"/></svg> Encender por red</button></section>
+</main>
+<nav aria-label="Secciones"><button class="selected" data-page="control" aria-current="page"><svg><use href="#remote"/></svg><span>Control</span></button><button data-page="applications"><svg><use href="#apps"/></svg><span>Apps</span></button><button data-page="numbers"><svg><use href="#keyboard"/></svg><span>Teclado</span></button></nav>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="preview-help"><h2>Vista previa del diseño</h2><p>La conexión con el televisor funciona desde el APK Android. Esta vista muestra la misma interfaz que está empaquetada en la app.</p><button id="close-preview">Entendido</button></dialog>
+</body></html>
